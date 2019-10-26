@@ -1,15 +1,17 @@
 const express = require('express');
+const morgan = require('morgan');
 const fs = require('fs');
 const app = express();
 
-app.use((req, res, next) => {
-// write your logging code here
 
-});
+app.use(morgan('dev'));
+// app.use((req, res, next) => {
+// // write your logging code here
+
+// });
 
 app.get('/', (req, res) => {
-// write your code to respond "ok" here
-
+res.status(200).send('ok')
 });
 
 app.get('/logs', (req, res) => {
