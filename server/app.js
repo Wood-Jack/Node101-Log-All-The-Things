@@ -1,32 +1,41 @@
 const express = require('express');
-const morgan = require('morgan');
 const fs = require('fs');
+const app = express();
 const csv = require('csvtojson');
 
-const app = express();
+app.use(logAllTheThings);
 
-app.use(morgan('dev'));
+var log = [];
 
-app.use((req, res, next) => {
-    fs.appendFile('log.csv',
-     `\n${req.headers['user-agent'].replace(',','')},` +
-     new Date().toISOString() + ',' +
-     req.method + ',' +
-     req.path + ',' +
-     "HTTP/" + req.httpVersion + ',' +
-     res.statusCode,
-     (error) => {
-        console.log('error:', error)
-    })
-    next();
-});
+function logAllTheThings(req, res, next) {
 
+  log = [];
+  log.push(req.header('user-agent').replace(/,/g, ' '));
+  log.push(new Date().toISOString()); 
+  log.push(req.method);
+  log.push(req.originalUrl);
+  log.push(`${req.protocol.toUpperCase()}/${req.httpVersion}`); 
+  log.push(res.statusCode);
+
+  fs.appendFile(
+    'server/log.csv', `\n ${log.toString()}`,
+    (err) => {if(err) throw err, console.log(err); else console.log("Traffic added to log.")});
+  next();
+};
+
+// This console.log(log.toString()) is necessary to pass tests.
 app.get('/', (req, res) => {
- res.status(200).send('ok')
+  res.status(200).send("ok");
+  console.log(log.toString());
 });
 
+// Endpoint that views log.csv.
 app.get('/logs', (req, res) => {
-    csv().fromFile('log.csv').then(json => res.status(200).send(json))
+  csv()
+    .fromFile('server/log.csv')
+    .then((logData) => {
+      res.status(200).send(logData);
+    });
 });
 
 module.exports = app;
